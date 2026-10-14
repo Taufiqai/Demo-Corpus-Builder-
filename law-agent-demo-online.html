@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#062a1d">
+<title>আইন এজেন্ট — কর্পাস ও প্রশ্ন (ডেমো)</title>
+<meta name="description" content="Cabinet Division Law & Policy Analysis AI Agent — a demonstration of building a legal corpus and querying it with retrieval-grounded (RAG) answers. Bilingual, fully client-side.">
+<meta property="og:title" content="আইন এজেন্ট — কর্পাস ও প্রশ্ন (ডেমো)">
+<meta property="og:description" content="Cabinet Division Law Agent — demonstration of corpus building and RAG-based legal Q&A.">
+<meta property="og:type" content="website">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23062a1d'/%3E%3Ctext x='50' y='68' font-size='56' text-anchor='middle' fill='%23d9a91c'%3E%E2%9A%96%3C/text%3E%3C/svg%3E">
+
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#041c13;--bg2:#062a1d;--panel:#0a3826;--panel2:#0e4630;
+    --gold:#d9a91c;--gold-dim:#9c7a15;--gold-soft:rgba(217,169,28,.13);
+    --leaf:#3fbf7f;--leaf-dim:#1f7a4d;--leaf-soft:rgba(63,191,127,.12);
+    --ink:#eaf5ee;--ink-dim:#9dbcaa;--ink-faint:#6d8f7c;--line:#1a5c3f;
+    --red:#e8564a;--amber:#e6a532;--sky:#4fb3d9;--plum:#b57fd4;
+    --bn:'Hind Siliguri',sans-serif;--mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:radial-gradient(1100px 560px at 80% -10%,#0d4a32,#062a1d 50%,#041c13 100%);
+    color:var(--ink);font-family:var(--bn);min-height:100vh;padding:18px 16px 60px;line-height:1.6}
+  .wrap{max-width:880px;margin:0 auto}
+  .ribbon{background:rgba(230,165,50,.14);border:1px solid var(--amber);border-radius:10px;
+    padding:9px 14px;margin-bottom:12px;font-size:12px;color:var(--ink);text-align:center;line-height:1.5}
+  .ribbon i{color:var(--ink-dim)}
+  /* top bar */
+  .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:12px}
+  .top b{font-size:14px;font-weight:600;color:var(--ink)}
+  .top .en{font-size:11px;color:var(--ink-faint);font-family:var(--mono)}
+  .demobadge{font-family:var(--mono);font-size:10px;letter-spacing:.8px;color:var(--amber);
+    background:rgba(230,165,50,.14);border:1px solid var(--amber);border-radius:16px;padding:4px 11px;margin-left:auto}
+  h1{font-size:22px;font-weight:700;color:var(--gold);margin:4px 0 2px}
+  .lead{font-size:13px;color:var(--ink-dim);margin-bottom:16px}
+  /* tabs */
+  .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{font-size:14px;font-weight:600;color:var(--ink-dim);background:none;border:none;cursor:pointer;
+    padding:11px 16px;border-bottom:2px solid transparent;white-space:nowrap;font-family:var(--bn);display:flex;align-items:center;gap:7px}
+  .tab .en{font-size:10.5px;color:var(--ink-faint);font-family:var(--mono);font-weight:400}
+  .tab:hover{color:var(--leaf)}
+  .tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+  .tab .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint)}
+  .tab.on .dot{background:var(--gold)}
+  .tab.ready .dot{background:var(--leaf)}
+  .panel{display:none}.panel.on{display:block}
+  .step{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;color:var(--gold-dim);text-transform:uppercase;margin:16px 0 8px}
+  .demo-banner{background:rgba(79,179,217,.1);border:1px solid #2b6d85;border-radius:11px;
+    padding:10px 14px;margin-bottom:18px;font-size:12.5px;color:var(--ink)}
+  .demo-banner b{color:var(--sky)}
+  /* dropzone */
+  .drop{border:2px dashed var(--leaf-dim);border-radius:14px;background:var(--panel);padding:28px 20px;text-align:center;transition:.18s;cursor:pointer}
+  .drop.over{border-color:var(--gold);background:var(--panel2)}
+  .drop .ico{font-size:30px;color:var(--leaf);margin-bottom:6px}
+  .drop .big{font-size:16px;color:var(--ink);font-weight:600;margin-bottom:4px}
+  .drop .small{font-size:12.5px;color:var(--ink-dim)}
+  input[type=file]{display:none}
+  .sample{margin-top:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .sample .lbl{font-size:12px;color:var(--ink-faint)}
+  .chip{font-size:12px;border:1px solid var(--line);background:var(--panel);color:var(--leaf);border-radius:16px;padding:5px 12px;cursor:pointer}
+  .chip:hover{border-color:var(--leaf);background:var(--leaf-soft)}
+  .files{margin-top:14px;display:grid;gap:7px}
+  .f{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 13px;font-size:13.5px}
+  .f .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .f .ty{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;background:var(--leaf-soft);color:var(--leaf)}
+  .f .scan{font-family:var(--mono);font-size:9.5px;padding:2px 6px;border-radius:4px;background:rgba(230,165,50,.14);color:var(--amber)}
+  .f .rm{cursor:pointer;color:var(--ink-faint);font-size:16px;padding:0 4px}.f .rm:hover{color:var(--red)}
+  .empty{color:var(--ink-faint);font-size:13px;font-style:italic;padding:8px 2px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
+  .btn{font-family:var(--bn);font-size:14px;font-weight:700;border:none;border-radius:10px;padding:12px 24px;cursor:pointer;background:linear-gradient(120deg,var(--gold),var(--gold-dim));color:#08240f}
+  .btn:hover{filter:brightness(1.08)}.btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink-dim);font-weight:500}
+  .btn.ghost:hover{border-color:var(--leaf);color:var(--leaf)}
+  .stageflow{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+  .sg{font-family:var(--mono);font-size:10.5px;padding:5px 11px;border-radius:14px;border:1px solid var(--line);color:var(--ink-faint);background:var(--bg2)}
+  .sg.run{border-color:var(--amber);color:var(--amber)}
+  .sg.done{border-color:var(--leaf);color:var(--leaf);background:var(--leaf-soft)}
+  .logbox{margin-top:14px;background:#031610;border:1px solid var(--line);border-radius:11px;padding:13px;font-family:var(--mono);font-size:12px;color:var(--ink-dim);max-height:240px;overflow-y:auto;white-space:pre-wrap;display:none}
+  .logbox.show{display:block}
+  .logbox .ok{color:var(--leaf)}.logbox .warn{color:var(--amber)}.logbox .dim{color:var(--ink-faint)}
+  .stats{display:none;gap:11px;flex-wrap:wrap;margin-top:16px}.stats.show{display:flex}
+  .stat{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--leaf);border-radius:10px;padding:12px 16px;min-width:112px}
+  .stat .n{font-size:23px;font-weight:700;color:var(--leaf);font-family:var(--mono)}
+  .stat .l{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.5px}
+  .done-msg{display:none;margin-top:15px;background:var(--leaf-soft);border:1px solid var(--leaf-dim);border-radius:11px;padding:13px 16px;font-size:13.5px;color:var(--ink)}
+  .done-msg.show{display:block}.done-msg b{color:var(--leaf)}
+  .done-msg .link{color:var(--gold);cursor:pointer;text-decoration:underline}
+  /* ask tab */
+  .locked{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:30px 20px;text-align:center;color:var(--ink-dim)}
+  .locked .ico{font-size:30px;color:var(--ink-faint);margin-bottom:8px}
+  .locked .big{font-size:15px;color:var(--ink);font-weight:600;margin-bottom:4px}
+  .asker{display:none}.asker.on{display:block}
+  .qpick{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+  .qchip{font-size:12.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink-dim);border-radius:16px;padding:7px 13px;cursor:pointer;font-family:var(--bn)}
+  .qchip:hover{border-color:var(--leaf);color:var(--leaf)}
+  textarea{width:100%;background:#031610;border:1px solid var(--line);color:var(--ink);padding:12px;border-radius:10px;font-family:var(--bn);font-size:14px;min-height:70px;resize:vertical;line-height:1.6}
+  textarea:focus{outline:none;border-color:var(--leaf)}
+  .answer{background:#031610;border:1px solid var(--line);border-left:3px solid var(--leaf);border-radius:10px;padding:15px;margin-top:14px;font-size:14px;line-height:1.8;white-space:pre-wrap;display:none}
+  .answer.show{display:block}
+  .answer h5{color:var(--gold);font-size:13px;margin:12px 0 4px;font-family:var(--bn)}.answer h5:first-child{margin-top:0}
+  .answer .cite{color:var(--sky);font-family:var(--mono);font-size:12px}
+  .answer .retr{font-family:var(--mono);font-size:11px;color:var(--ink-faint);border-top:1px dashed var(--line);margin-top:12px;padding-top:9px}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .note{font-size:12px;color:var(--ink-faint);font-style:italic;margin-top:22px;border-top:1px solid var(--line);padding-top:14px;line-height:1.7}
+  .note b{color:var(--gold);font-style:normal}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ribbon">⦿ এটি একটি প্রদর্শনী সংস্করণ — প্রকৃত সরকারি সিস্টেম নয়। কোনো প্রকৃত বা গোপনীয় নথি এখানে দেবেন না। &nbsp;·&nbsp; <i>This is a demonstration — not a live government system. Do not enter any real or confidential documents here.</i></div>
+  <div class="top">
+    <b>গণপ্রজাতন্ত্রী বাংলাদেশ সরকার · মন্ত্রিপরিষদ বিভাগ</b>
+    <span class="en">Cabinet Division</span>
+    <span class="demobadge">⦿ ডেমো · DEMO</span>
+  </div>
+  <h1>আইন ও নীতি বিশ্লেষণ এজেন্ট</h1>
+  <div class="lead">কর্পাস তৈরি করুন, তারপর এজেন্টকে প্রশ্ন করুন — সবই এই পাতায় সিমুলেটেড। <i>Build the corpus, then query the agent — all simulated on this page.</i></div>
+
+  <div class="tabs">
+    <button class="tab on" id="t-corpus" onclick="tab('corpus')"><span class="dot"></span>কর্পাস তৈরি <span class="en">Build corpus</span></button>
+    <button class="tab" id="t-ask" onclick="tab('ask')"><span class="dot"></span>প্রশ্ন করুন <span class="en">Ask</span></button>
+  </div>
+
+  <!-- ========== CORPUS TAB ========== -->
+  <div class="panel on" id="p-corpus">
+    <div class="demo-banner">
+      <b>⦿ এটি ডেমোনস্ট্রেশন।</b> পুরো প্রক্রিয়া (ingest → chunk → embed → Qdrant) ব্রাউজারেই সিমুলেট করে দেখানো হয় — কোনো ফাইল আপলোড হয় না, সার্ভার বা ইন্টারনেট লাগে না। প্রকৃত টুলে (<code>make corpus-gui</code>) একই ইন্টারফেস, আসল এমবেডিং ও Qdrant লোড — সবই স্থানীয় মেশিনে।
+    </div>
+    <div class="step">① নথি যোগ করুন / Add documents</div>
+    <div class="drop" id="drop">
+      <div class="ico">⬆</div>
+      <div class="big">ফাইল টেনে এনে ছাড়ুন / Drag &amp; drop files here</div>
+      <div class="small">PDF, DOC, DOCX · স্ক্যান করা PDF হলে স্বয়ংক্রিয় OCR</div>
+    </div>
+    <input type="file" id="picker" multiple accept=".pdf,.doc,.docx">
+    <div class="sample">
+      <span class="lbl">নমুনা যোগ করুন / add samples:</span>
+      <span class="chip" onclick="addSample('Rules_of_Business_1996.pdf','PDF',false,37)">রুলস অব বিজনেস</span>
+      <span class="chip" onclick="addSample('সারসংক্ষেপ-নির্দেশিকা.pdf','PDF',true,3)">নির্দেশিকা (স্ক্যান)</span>
+      <span class="chip" onclick="addSample('কার্যাবলি-বিভাজন.doc','DOC',false,27)">কার্যাবলি বিভাজন</span>
+      <span class="chip" onclick="addAll()">তিনটিই / all</span>
+    </div>
+    <div class="files" id="files"><div class="empty">এখনও কোনো ফাইল নেই / no files yet</div></div>
+    <div class="step">② কর্পাস তৈরি / Build</div>
+    <div class="row">
+      <button class="btn" id="build" onclick="build()">কর্পাস তৈরি করুন / Build corpus</button>
+      <button class="btn ghost" onclick="clearAll()">সব মুছুন / Clear</button>
+    </div>
+    <div class="stageflow" id="flow"></div>
+    <div class="logbox" id="log"></div>
+    <div class="stats" id="stats">
+      <div class="stat"><div class="n" id="s-docs">0</div><div class="l">নথি / docs</div></div>
+      <div class="stat"><div class="n" id="s-chunks">0</div><div class="l">chunk</div></div>
+      <div class="stat"><div class="n" id="s-points">0</div><div class="l">DB points</div></div>
+      <div class="stat"><div class="n" id="s-time">0s</div><div class="l">সময় / time</div></div>
+    </div>
+    <div class="done-msg" id="done">
+      <b>✓ কর্পাস প্রস্তুত।</b> এখন <span class="link" onclick="tab('ask')">প্রশ্ন করুন ট্যাবে</span> গিয়ে এজেন্টকে প্রশ্ন করুন।
+      <i> Corpus ready — switch to the Ask tab to query the agent.</i>
+    </div>
+  </div>
+
+  <!-- ========== ASK TAB ========== -->
+  <div class="panel" id="p-ask">
+    <div id="asklocked" class="locked">
+      <div class="ico">🔒</div>
+      <div class="big">আগে কর্পাস তৈরি করুন / Build the corpus first</div>
+      <div>এজেন্ট কর্পাস থেকে বিধান উদ্ধার করে উত্তর দেয় — তাই আগে "কর্পাস তৈরি" ট্যাবে কর্পাস বানাতে হবে।<br>
+      <i>The agent answers by retrieving provisions from the corpus, so build it first.</i></div>
+    </div>
+    <div class="asker" id="asker">
+      <div class="demo-banner">
+        <b>⦿ সিমুলেটেড উত্তর।</b> এই ডেমোতে উত্তরগুলো পূর্ব-নির্মিত, যাতে উদ্ধার-ভিত্তিক (RAG) প্রক্রিয়া ও উদ্ধৃতির ধরন দেখানো যায়। প্রকৃত এজেন্টে স্থানীয় ৭০বি মডেল কর্পাস থেকে বিধান উদ্ধার করে উত্তর তৈরি করে।
+      </div>
+      <div class="step">নমুনা প্রশ্ন / Sample questions</div>
+      <div class="qpick" id="qpick"></div>
+      <textarea id="q" placeholder="এখানে প্রশ্ন লিখুন বা উপরের নমুনা বেছে নিন / type a question or pick a sample above"></textarea>
+      <div class="row">
+        <button class="btn" id="askbtn" onclick="ask()">প্রশ্ন করুন / Ask</button>
+      </div>
+      <div class="answer" id="answer"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>উদ্ধার-ভিত্তিক (RAG):</b> এজেন্ট আইন "মুখস্থ" করে না — কর্পাস থেকে প্রাসঙ্গিক ধারা/বিধি উদ্ধার করে তার উপর ভিত্তি করে উত্তর দেয় ও উদ্ধৃতি দেখায়। এই পাতাটি একই সাইটে একটি ট্যাব হিসেবে যুক্ত করা যায়।
+    <br><i>Retrieval-based (RAG): the agent retrieves relevant provisions and cites them rather than memorising the law. This page can be embedded as one tab in the same site.</i>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let FILES=[], CORPUS_READY=false, CORPUS={docs:0,chunks:0};
+
+/* ---------- tabs ---------- */
+function tab(name){
+  ['corpus','ask'].forEach(n=>{
+    $('t-'+n).classList.toggle('on',n===name);
+    $('p-'+n).classList.toggle('on',n===name);
+  });
+  if(name==='ask') syncAsk();
+}
+
+/* ---------- corpus: files ---------- */
+function estChunks(p,t){return Math.max(1,Math.round(p*(t==='DOC'?1.0:1.1)));}
+const drop=$('drop'),picker=$('picker');
+drop.onclick=()=>picker.click();
+['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',ev=>addReal(ev.dataTransfer.files));
+picker.addEventListener('change',()=>addReal(picker.files));
+function addReal(fl){[...fl].forEach(f=>{
+  if(!/\.(pdf|docx?)$/i.test(f.name))return;
+  const t=f.name.split('.').pop().toUpperCase();const ty=t==='DOCX'?'DOCX':t;
+  const p=Math.max(1,Math.round(f.size/45000));const scan=/scan|স্ক্যান/i.test(f.name);
+  FILES.push({name:f.name,type:ty,scanned:scan,pages:p,chunks:estChunks(p,ty)});
+});render();}
+function addSample(n,t,s,p){if(FILES.some(f=>f.name===n))return;FILES.push({name:n,type:t,scanned:s,pages:p,chunks:estChunks(p,t)});render();}
+function addAll(){addSample('Rules_of_Business_1996.pdf','PDF',false,37);addSample('সারসংক্ষেপ-নির্দেশিকা.pdf','PDF',true,3);addSample('কার্যাবলি-বিভাজন.doc','DOC',false,27);}
+function removeFile(i){FILES.splice(i,1);render();}
+function clearAll(){FILES=[];render();$('log').classList.remove('show');$('stats').classList.remove('show');$('done').classList.remove('show');$('flow').innerHTML='';}
+function render(){
+  const b=$('files');
+  if(!FILES.length){b.innerHTML='<div class="empty">এখনও কোনো ফাইল নেই / no files yet</div>';return;}
+  b.innerHTML=FILES.map((f,i)=>`<div class="f"><span class="ty">${f.type}</span><span class="nm">${f.name}</span>${f.scanned?'<span class="scan">OCR</span>':''}<span class="rm" onclick="removeFile(${i})">✕</span></div>`).join('');
+}
+
+/* ---------- corpus: build ---------- */
+const STAGES=[['Ingest','নিষ্কাশন'],['Chunk','বিভাজন'],['Embed','এমবেডিং'],['Load','লোড']];
+function drawFlow(a){$('flow').innerHTML=STAGES.map(([en,bn],i)=>{const c=a>=STAGES.length?'done':(i<a?'done':(i===a?'run':''));return `<span class="sg ${c}">${i+1}. ${bn} / ${en}</span>`;}).join('');}
+function logLine(h){const l=$('log');l.innerHTML+=h+'\n';l.scrollTop=l.scrollHeight;}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function build(){
+  if(!FILES.length){alert('আগে নথি যোগ করুন / add documents first');return;}
+  $('build').disabled=true;$('log').classList.add('show');$('log').innerHTML='';
+  $('stats').classList.remove('show');$('done').classList.remove('show');
+  const t0=Date.now();let chunks=0;
+  drawFlow(0);logLine(`<span class="dim">${FILES.length}টি নথি প্রক্রিয়া হচ্ছে / processing ${FILES.length} doc(s)…</span>`);
+  for(const f of FILES){await sleep(360);logLine(`  • ${f.name}`);
+    if(f.scanned){logLine(`    <span class="warn">(টেক্সট স্তর নেই — OCR চলছে / no text layer — OCR bn+eng)</span>`);await sleep(600);}
+    logLine(`    <span class="ok">✓</span> ${f.pages} পৃষ্ঠা / pages`);}
+  drawFlow(1);await sleep(340);FILES.forEach(f=>chunks+=f.chunks);
+  logLine(`<span class="dim">ধারা/বিধি অনুযায়ী বিভাজন / chunking…</span>`);await sleep(380);
+  logLine(`  <span class="ok">✓</span> ${chunks}টি chunk (title · url · page মেটাডেটা)`);
+  drawFlow(2);logLine(`<span class="dim">BGE-m3 এমবেডিং / embedding…</span>`);
+  let d=0;while(d<chunks){d=Math.min(chunks,d+Math.ceil(chunks/6));await sleep(290);logLine(`  <span class="dim">embed ${d}/${chunks}</span>`);}
+  drawFlow(3);logLine(`<span class="dim">Qdrant-এ লোড / loading…</span>`);
+  let l=0;while(l<chunks){l=Math.min(chunks,l+Math.ceil(chunks/4));await sleep(250);logLine(`  <span class="dim">loaded ${l}/${chunks}</span>`);}
+  drawFlow(STAGES.length);const secs=((Date.now()-t0)/1000).toFixed(1);
+  logLine(`<span class="ok">সম্পন্ন / done — ${chunks} chunks from ${FILES.length} docs → 'bd_law'</span>`);
+  $('s-docs').textContent=FILES.length;$('s-chunks').textContent=chunks;$('s-points').textContent=chunks;$('s-time').textContent=secs+'s';
+  $('stats').classList.add('show');$('done').classList.add('show');$('build').disabled=false;
+  CORPUS_READY=true;CORPUS={docs:FILES.length,chunks};
+  $('t-ask').classList.add('ready');
+}
+
+/* ---------- ask tab ---------- */
+function syncAsk(){
+  $('asklocked').style.display=CORPUS_READY?'none':'block';
+  $('asker').classList.toggle('on',CORPUS_READY);
+  if(CORPUS_READY && !$('qpick').innerHTML) renderQ();
+}
+// pre-built Q&A keyed to the sample corpus
+const QA=[
+ {q:"রুলস অব বিজনেস অনুযায়ী আইন প্রণয়ন কি মন্ত্রিসভায় আনতে হয়?",
+  a:[["উত্তর",
+      "হ্যাঁ। রুলস অব বিজনেস, ১৯৯৬-এর **বিধি ১৬(i)** অনুযায়ী আইন প্রণয়ন সংক্রান্ত বিষয় — অধ্যাদেশ জারিসহ — মন্ত্রিসভার সামনে আনয়ন করা আবশ্যক। এছাড়া **বিধি ১৪ক** অনুযায়ী সকল আইন প্রণয়ন প্রস্তাবে লেজিসলেটিভ ও সংসদ বিষয়ক বিভাগের সঙ্গে পরামর্শ বাধ্যতামূলক।"]],
+  cites:["Rules of Business, 1996 — বিধি ১৬(i)","Rules of Business, 1996 — বিধি ১৪ক"]},
+ {q:"মন্ত্রিসভার সারসংক্ষেপ বৈঠকের কত দিন আগে পাঠাতে হয়?",
+  a:[["উত্তর",
+      "সারসংক্ষেপ বৈঠকের অন্তত **চার কার্যদিবস (four clear days)** পূর্বে মন্ত্রিপরিষদ বিভাগে পৌঁছাতে হবে (রুলস অব বিজনেস, ১৯৯৬-এর বিধি ১৯(৪))। সারসংক্ষেপ প্রণয়ন নির্দেশিকা অনুযায়ী **৭২ কপি** প্রেরণ করতে হয় এবং প্রথম পৃষ্ঠায় **'অতি গোপনীয়'** চিহ্ন থাকতে হবে।"]],
+  cites:["Rules of Business, 1996 — বিধি ১৯(৪)","সারসংক্ষেপ প্রণয়ন নির্দেশিকা — ১(গ), ১(ঙ)"]},
+ {q:"ব্যয় সংশ্লিষ্ট প্রস্তাবে কোন বিভাগের মত লাগে?",
+  a:[["উত্তর",
+      "বাজেটে সংকুলান নেই এমন ব্যয় সংশ্লিষ্ট প্রস্তাবে **অর্থ বিভাগের** পূর্ব-সম্মতি আবশ্যক (রুলস অব বিজনেস, ১৯৯৬-এর বিধি ১৩)। সারসংক্ষেপে অর্থ বিভাগের মত লিপিবদ্ধ থাকতে হবে (বিধি ১৯(৩)); উন্নয়ন ব্যয় হলে **পরিকল্পনা কমিশনের** মতও।"]],
+  cites:["Rules of Business, 1996 — বিধি ১৩","Rules of Business, 1996 — বিধি ১৯(৩)"]},
+];
+function renderQ(){
+  $('qpick').innerHTML=QA.map((x,i)=>`<span class="qchip" onclick="pickQ(${i})">${x.q}</span>`).join('');
+}
+function pickQ(i){$('q').value=QA[i].q;}
+function findQA(text){
+  text=text.trim().toLowerCase();
+  let best=null,score=0;
+  QA.forEach(x=>{
+    const words=x.q.toLowerCase().replace(/[?।]/g,'').split(/\s+/);
+    let s=words.filter(w=>w.length>2&&text.includes(w)).length;
+    // keyword boosts
+    if(/ব্যয়|অর্থ|বাজেট/.test(text)&&/ব্যয়/.test(x.q))s+=3;
+    if(/সারসংক্ষেপ|কপি|দিন|কার্যদিবস/.test(text)&&/সারসংক্ষেপ/.test(x.q))s+=3;
+    if(/প্রণয়ন|মন্ত্রিসভা|আইন/.test(text)&&/প্রণয়ন/.test(x.q))s+=2;
+    if(s>score){score=s;best=x;}
+  });
+  return score>0?best:null;
+}
+async function ask(){
+  const text=$('q').value.trim();const out=$('answer');const btn=$('askbtn');
+  if(!text){out.classList.add('show');out.innerHTML='অনুগ্রহ করে একটি প্রশ্ন লিখুন / please type a question';return;}
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> উদ্ধার করছে / retrieving…';
+  out.classList.add('show');
+  out.innerHTML=`<span class="retr" style="border:none;padding:0">কর্পাস থেকে প্রাসঙ্গিক বিধান খোঁজা হচ্ছে… / searching ${CORPUS.chunks} chunks…</span>`;
+  await sleep(900);
+  const hit=findQA(text);
+  if(!hit){
+    out.innerHTML=`<h5>উত্তর / Answer</h5>এই নমুনা কর্পাসে এই প্রশ্নের সুনির্দিষ্ট উত্তর পাওয়া যায়নি। (ডেমোতে কেবল কয়েকটি নমুনা প্রশ্নের পূর্ব-নির্মিত উত্তর আছে — উপরের নমুনা থেকে বেছে দেখুন।)<br><i>No specific answer in this sample corpus. The demo has prepared answers for a few sample questions — try one from the chips above.</i>`;
+  }else{
+    let html=hit.a.map(([h,b])=>`<h5>${h}</h5>${b.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')}`).join('');
+    html+=`<h5>উদ্ধৃত উৎস / Citations</h5>`+hit.cites.map(c=>`<div class="cite">▪ ${c}</div>`).join('');
+    html+=`<div class="retr">⦿ সিমুলেটেড · ${CORPUS.chunks}টি chunk থেকে ৩টি প্রাসঙ্গিক অংশ উদ্ধার করা হয়েছে · প্রকৃত এজেন্টে স্থানীয় ৭০বি মডেল এই বিধানগুলোর উপর ভিত্তি করে উত্তর তৈরি করত।</div>`;
+    out.innerHTML=html;
+  }
+  btn.disabled=false;btn.textContent='প্রশ্ন করুন / Ask';
+}
+
+render();
+</script>
+</body>
+</html>
